@@ -3,72 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LockQR - Open in App</title>
+    <title>LockQR - Secure QR Code</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #020617 0%, #1e293b 100%);
-            color: #e5e7eb;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            text-align: center;
         }
         .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
             max-width: 400px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
         }
         h1 {
-            font-size: 28px;
-            margin-bottom: 16px;
+            color: #1f2937;
+            font-size: 24px;
+            margin-bottom: 12px;
+            font-weight: 700;
         }
-        p {
-            color: #9ca3af;
-            margin-bottom: 32px;
-        }
-        .button {
-            display: inline-block;
-            background: #4f46e5;
-            color: white;
-            padding: 14px 28px;
-            text-decoration: none;
-            border-radius: 999px;
-            font-weight: 600;
-            margin-bottom: 16px;
-        }
-        .secondary {
-            display: inline-block;
-            color: #9ca3af;
-            text-decoration: none;
+        .subtitle {
+            color: #6b7280;
             font-size: 14px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 12px 20px;
+            background: #f3f4f6;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .note {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 12px;
+            color: #9ca3af;
+            line-height: 1.6;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔒 LockQR</h1>
-        <p>This QR code is password-protected. Download the LockQR app to unlock and view its content.</p>
-        <a href="https://play.google.com/store/apps/details?id=com.veriontech.lockqr" class="button">Download from Play Store</a>
+        <div class="icon">🔐</div>
+        <h1>Secure QR Code</h1>
+        <p class="subtitle">This QR code is password protected. Open it with the LockQR app to unlock the content.</p>
+        
+        <div class="status" id="status">
+            <span class="spinner"></span> Attempting to open LockQR...
+        </div>
+        
+        <a href="#" class="btn" id="downloadBtn" style="display: none;">
+            📱 Download LockQR
+        </a>
+        
+        <div class="note">
+            After installation, the app will automatically open and prompt you for the password.
+        </div>
     </div>
 
     <script>
-        // Get the encrypted data from URL
-        const params = new URLSearchParams(window.location.search);
-        const data = params.get('data');
+        // Get encrypted data from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const encryptedData = urlParams.get('data');
         
-        // Try to open in app using custom scheme
-        if (data) {
-            const appUrl = `lockqr://qr?data=${encodeURIComponent(data)}`;
+        if (!encryptedData) {
+            document.getElementById('status').textContent = '❌ Invalid QR code';
+            document.getElementById('status').style.background = '#fee2e2';
+            document.getElementById('status').style.color = '#dc2626';
+        } else {
+            // Store encrypted data in localStorage for later retrieval
+            localStorage.setItem('lockqr_pending_data', encryptedData);
             
-            // Try to open app automatically
-            window.location.href = appUrl;
+            // Try to open the app with deep link
+            const appScheme = `lockqr://scan?data=${encodeURIComponent(encryptedData)}`;
+            window.location.href = appScheme;
             
-            // If app doesn't open after 2 seconds, user doesn't have it installed
+            // After 2 seconds, show download button (app likely not installed)
             setTimeout(() => {
-                console.log('App not detected');
+                document.getElementById('status').textContent = "📱 App not installed";
+                document.getElementById('status').style.background = '#fef3c7';
+                document.getElementById('status').style.color = '#92400e';
+                
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.style.display = 'inline-flex';
+                
+                // Update download button with Play Store link + referrer
+                // The referrer will help the app know to check localStorage for pending data
+                downloadBtn.href = `https://play.google.com/store/apps/details?id=com.verion.app&referrer=${encodeURIComponent('lockqr://scan?data=' + encodeURIComponent(encryptedData))}`;
             }, 2000);
+            
+            // Also try opening with HTTPS fallback scheme
+            setTimeout(() => {
+                const httpsScheme = `https://lockqr.app/scan?data=${encodeURIComponent(encryptedData)}`;
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = httpsScheme;
+                document.body.appendChild(iframe);
+                setTimeout(() => document.body.removeChild(iframe), 1000);
+            }, 500);
         }
     </script>
 </body>
